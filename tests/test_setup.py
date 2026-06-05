@@ -104,7 +104,7 @@ def test_groq_connection():
     client = Groq(api_key=api_key)
 
     response = client.chat.completions.create(
-        model="llama3-70b-8192",
+        model="llama-3.3-70b-versatile",
         messages=[{"role": "user", "content": 'Reply with just the word "OK" in Bangla.'}],
         max_tokens=20,
     )
