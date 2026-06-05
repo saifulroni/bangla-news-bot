@@ -1,6 +1,7 @@
 name: Bangla News Pipeline
 
 on:
+<<<<<<< HEAD
   # Run every 5 minutes
   schedule:
     - cron: "*/5 * * * *"
@@ -9,6 +10,12 @@ on:
   workflow_dispatch:
 
 # Prevent overlapping runs if a run takes longer than 5 minutes
+=======
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+>>>>>>> eb8ab960a4d2e032a6364395b31b39d8712a3e02
 concurrency:
   group: pipeline
   cancel-in-progress: false
@@ -21,6 +28,7 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+<<<<<<< HEAD
 
       # Cache pip packages and the sentence-transformer model
       # This makes subsequent runs much faster (~30s vs ~3min first run)
@@ -30,6 +38,17 @@ jobs:
           path: |
             ~/.cache/pip
             ~/.cache/huggingface
+=======
+        with:
+          lfs: false   # Model files are regular git files, not LFS
+
+      # Cache only pip packages — the embedding model is committed to the repo
+      # and loaded from ./models/ at runtime, no HuggingFace download needed.
+      - name: Cache pip packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+>>>>>>> eb8ab960a4d2e032a6364395b31b39d8712a3e02
           key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
@@ -42,9 +61,23 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+<<<<<<< HEAD
       # Restore SQLite databases from previous runs
       # (GitHub Actions runners are ephemeral — without this, the bot
       # forgets what it has already published on every run)
+=======
+      # Verify the model directory is present before running
+      - name: Check model files
+        run: |
+          if [ ! -d "models/all-MiniLM-L6-v2" ]; then
+            echo "ERROR: models/all-MiniLM-L6-v2/ not found in repo."
+            echo "Run 'python download_model.py' locally and commit the models/ folder."
+            exit 1
+          fi
+          echo "Model directory found: $(du -sh models/all-MiniLM-L6-v2 | cut -f1)"
+
+      # Restore SQLite databases from previous runs
+>>>>>>> eb8ab960a4d2e032a6364395b31b39d8712a3e02
       - name: Restore pipeline databases
         uses: actions/cache@v4
         id: db-cache
@@ -58,6 +91,7 @@ jobs:
 
       - name: Run pipeline
         env:
+<<<<<<< HEAD
           GROQ_API_KEY:               ${{ secrets.GROQ_API_KEY }}
           HF_API_TOKEN:               ${{ secrets.HF_API_TOKEN }}
           STORAGE_MODE:               ${{ vars.STORAGE_MODE || 'sqlite' }}
@@ -66,13 +100,26 @@ jobs:
           TELEGRAM_CHANNEL_ID:        ${{ secrets.TELEGRAM_CHANNEL_ID }}
           IMPORTANCE_SCORE_THRESHOLD: ${{ vars.IMPORTANCE_SCORE_THRESHOLD || '3.0' }}
           DEDUP_SIMILARITY_THRESHOLD: ${{ vars.DEDUP_SIMILARITY_THRESHOLD || '0.85' }}
+=======
+          GROQ_API_KEY:                ${{ secrets.GROQ_API_KEY }}
+          HF_API_TOKEN:                ${{ secrets.HF_API_TOKEN }}
+          STORAGE_MODE:                ${{ vars.STORAGE_MODE || 'sqlite' }}
+          GOOGLE_SHEET_ID:             ${{ secrets.GOOGLE_SHEET_ID }}
+          TELEGRAM_BOT_TOKEN:          ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHANNEL_ID:         ${{ secrets.TELEGRAM_CHANNEL_ID }}
+          IMPORTANCE_SCORE_THRESHOLD:  ${{ vars.IMPORTANCE_SCORE_THRESHOLD || '3.0' }}
+          DEDUP_SIMILARITY_THRESHOLD:  ${{ vars.DEDUP_SIMILARITY_THRESHOLD || '0.85' }}
+>>>>>>> eb8ab960a4d2e032a6364395b31b39d8712a3e02
           HF_CLASSIFICATION_THRESHOLD: ${{ vars.HF_CLASSIFICATION_THRESHOLD || '0.55' }}
           LOG_LEVEL: INFO
         run: python main.py
 
+<<<<<<< HEAD
       # If using Google Sheets for storage, you don't need this step.
       # For SQLite mode, commit updated databases back to the repo so
       # they persist between ephemeral runner instances.
+=======
+>>>>>>> eb8ab960a4d2e032a6364395b31b39d8712a3e02
       - name: Commit updated databases (SQLite mode)
         if: ${{ vars.STORAGE_MODE != 'sheets' }}
         run: |

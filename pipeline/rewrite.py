@@ -21,7 +21,11 @@ from groq import Groq
 logger = logging.getLogger(__name__)
 
 GROQ_API_KEY  = os.getenv("GROQ_API_KEY", "")
+<<<<<<< HEAD
 GROQ_MODEL    = "llama3-70b-8192"   # Best free-tier model for Bangla
+=======
+GROQ_MODEL    = "llama-3.3-70b-versatile"   # Best free-tier model for Bangla
+>>>>>>> eb8ab960a4d2e032a6364395b31b39d8712a3e02
 MAX_RETRIES   = 3
 RETRY_DELAY   = 5   # seconds between retries
 
@@ -91,9 +95,15 @@ def _call_groq(user_message: str) -> dict | None:
                     {"role": "system", "content": SYSTEM_PROMPT},
                     {"role": "user",   "content": user_message},
                 ],
+<<<<<<< HEAD
                 max_tokens=600,
                 temperature=0.4,   # Lower = more consistent, journalist-like output
                 response_format={"type": "json_object"},
+=======
+                max_tokens=1200,
+                temperature=0.4,   # Lower = more consistent, journalist-like output
+               # response_format={"type": "json_object"},
+>>>>>>> eb8ab960a4d2e032a6364395b31b39d8712a3e02
             )
             raw = response.choices[0].message.content.strip()
             result = json.loads(raw)

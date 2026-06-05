@@ -1,8 +1,17 @@
 feedparser==6.0.11
 requests==2.31.0
+<<<<<<< HEAD
 groq==0.9.0
+=======
+groq==1.4.0
+httpx==0.27.2
+>>>>>>> eb8ab960a4d2e032a6364395b31b39d8712a3e02
 sentence-transformers==3.0.1
 gspread==6.1.2
 google-auth==2.29.0
 numpy==1.26.4
+<<<<<<< HEAD
 python-dotenv==1.0.1
+=======
+python-dotenv==1.0.1
+>>>>>>> eb8ab960a4d2e032a6364395b31b39d8712a3e02

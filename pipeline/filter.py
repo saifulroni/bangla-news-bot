@@ -32,8 +32,21 @@ DEDUP_DB_PATH        = Path("dedup_cache.sqlite")
 
 # HuggingFace Inference API endpoint
 HF_ENDPOINT = "https://api-inference.huggingface.co/models/facebook/bart-large-mnli"
+<<<<<<< HEAD
 # Sentence transformer model (runs locally on CPU)
 EMBED_MODEL_NAME = "all-MiniLM-L6-v2"
+=======
+
+# Sentence transformer model — loaded from local path (committed to repo).
+# Fall back to HuggingFace download only if local path doesn't exist.
+LOCAL_MODEL_PATH = Path("models/all-MiniLM-L6-v2")
+EMBED_MODEL_NAME = str(LOCAL_MODEL_PATH) if LOCAL_MODEL_PATH.exists() else "all-MiniLM-L6-v2"
+
+# When running in GitHub Actions, skip the HuggingFace Inference API entirely
+# (network access to huggingface.co is blocked on GH runners).
+# Zero-shot classification still works fine locally.
+IS_GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS") == "true"
+>>>>>>> eb8ab960a4d2e032a6364395b31b39d8712a3e02
 
 # Lazy-loaded globals (loaded once per process, not per article)
 _embed_model = None
@@ -86,8 +99,18 @@ def _classify_batch(headlines: list[str]) -> list[float]:
     """
     Send a batch of headlines to HuggingFace zero-shot classification.
     Returns a list of confidence scores for "breaking political news".
+<<<<<<< HEAD
     Falls back to 1.0 (pass all) if the API is unavailable.
     """
+=======
+    Falls back to 1.0 (pass all) if the API is unavailable or blocked.
+    """
+    if IS_GITHUB_ACTIONS:
+        # HuggingFace API is unreachable from GitHub Actions runners.
+        # Keyword scoring (Stage 1) already handled filtering — pass all through.
+        return [1.0] * len(headlines)
+
+>>>>>>> eb8ab960a4d2e032a6364395b31b39d8712a3e02
     if not HF_API_TOKEN:
         logger.warning("HF_API_TOKEN not set — skipping zero-shot classification")
         return [1.0] * len(headlines)
@@ -163,11 +186,24 @@ def filter_by_classification(articles: list[dict]) -> list[dict]:
 # ══════════════════════════════════════════════════════════════════════════════
 
 def _load_embed_model():
+<<<<<<< HEAD
     """Lazy-load the sentence transformer model (only once per process)."""
     global _embed_model
     if _embed_model is None:
         from sentence_transformers import SentenceTransformer
         logger.info("Loading embedding model all-MiniLM-L6-v2...")
+=======
+    """
+    Lazy-load the sentence transformer model (only once per process).
+    Uses the local ./models/ copy if present; otherwise downloads from HuggingFace.
+    On GitHub Actions the local copy MUST exist (run download_model.py first).
+    """
+    global _embed_model
+    if _embed_model is None:
+        from sentence_transformers import SentenceTransformer
+        source = f"local repo ({EMBED_MODEL_NAME})" if LOCAL_MODEL_PATH.exists() else "HuggingFace (downloading...)"
+        logger.info(f"Loading embedding model from {source}")
+>>>>>>> eb8ab960a4d2e032a6364395b31b39d8712a3e02
         _embed_model = SentenceTransformer(EMBED_MODEL_NAME)
     return _embed_model
 
