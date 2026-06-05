@@ -1,0 +1,83 @@
+name: Bangla News Pipeline
+
+on:
+  # Run every 5 minutes
+  schedule:
+    - cron: "*/5 * * * *"
+
+  # Allow manual trigger from GitHub Actions UI
+  workflow_dispatch:
+
+# Prevent overlapping runs if a run takes longer than 5 minutes
+concurrency:
+  group: pipeline
+  cancel-in-progress: false
+
+jobs:
+  run-pipeline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Cache pip packages and the sentence-transformer model
+      # This makes subsequent runs much faster (~30s vs ~3min first run)
+      - name: Cache pip packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pip
+            ~/.cache/huggingface
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      # Restore SQLite databases from previous runs
+      # (GitHub Actions runners are ephemeral — without this, the bot
+      # forgets what it has already published on every run)
+      - name: Restore pipeline databases
+        uses: actions/cache@v4
+        id: db-cache
+        with:
+          path: |
+            news_pipeline.sqlite
+            dedup_cache.sqlite
+          key: pipeline-db-${{ github.run_number }}
+          restore-keys: |
+            pipeline-db-
+
+      - name: Run pipeline
+        env:
+          GROQ_API_KEY:               ${{ secrets.GROQ_API_KEY }}
+          HF_API_TOKEN:               ${{ secrets.HF_API_TOKEN }}
+          STORAGE_MODE:               ${{ vars.STORAGE_MODE || 'sqlite' }}
+          GOOGLE_SHEET_ID:            ${{ secrets.GOOGLE_SHEET_ID }}
+          TELEGRAM_BOT_TOKEN:         ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHANNEL_ID:        ${{ secrets.TELEGRAM_CHANNEL_ID }}
+          IMPORTANCE_SCORE_THRESHOLD: ${{ vars.IMPORTANCE_SCORE_THRESHOLD || '3.0' }}
+          DEDUP_SIMILARITY_THRESHOLD: ${{ vars.DEDUP_SIMILARITY_THRESHOLD || '0.85' }}
+          HF_CLASSIFICATION_THRESHOLD: ${{ vars.HF_CLASSIFICATION_THRESHOLD || '0.55' }}
+          LOG_LEVEL: INFO
+        run: python main.py
+
+      # If using Google Sheets for storage, you don't need this step.
+      # For SQLite mode, commit updated databases back to the repo so
+      # they persist between ephemeral runner instances.
+      - name: Commit updated databases (SQLite mode)
+        if: ${{ vars.STORAGE_MODE != 'sheets' }}
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -f news_pipeline.sqlite dedup_cache.sqlite || true
+          git diff --staged --quiet || git commit -m "chore: update pipeline databases [skip ci]"
+          git push || true
