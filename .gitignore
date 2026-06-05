@@ -14,9 +14,11 @@ dist/
 build/
 
 # Databases (large files — tracked via Actions cache, not git)
-# EXCEPTION: if you want to commit the SQLite files, remove these lines
 news_pipeline.sqlite
 dedup_cache.sqlite
+
+# Model files ARE committed to git (needed for GitHub Actions offline use)
+# Do NOT add models/ here
 
 # Logs
 pipeline.log
