@@ -1,0 +1,8 @@
+feedparser==6.0.11
+requests==2.31.0
+groq==0.9.0
+sentence-transformers==3.0.1
+gspread==6.1.2
+google-auth==2.29.0
+numpy==1.26.4
+python-dotenv==1.0.1
