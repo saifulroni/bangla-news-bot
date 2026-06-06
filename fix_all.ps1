@@ -1,3 +1,23 @@
+# fix_all.ps1 - Run this in PowerShell inside your repo folder
+# It overwrites every file that could have merge conflict markers
+
+Write-Host "Fixing all files..." -ForegroundColor Cyan
+
+# ── requirements.txt ──────────────────────────────────────────────────────
+Set-Content -Path "requirements.txt" -Value @"
+feedparser==6.0.11
+requests==2.31.0
+groq==0.9.0
+sentence-transformers==3.0.1
+gspread==6.1.2
+google-auth==2.29.0
+numpy==1.26.4
+python-dotenv==1.0.1
+"@
+Write-Host "Fixed: requirements.txt"
+
+# ── pipeline/rewrite.py ───────────────────────────────────────────────────
+Set-Content -Path "pipeline\rewrite.py" -Value @'
 """
 rewrite.py - AI-powered Bangla rewriting using Groq free API.
 Returns headline, caption, story in Bangla as JSON.
@@ -121,3 +141,108 @@ def rewrite_all(articles: list, recent_context: list) -> list:
             time.sleep(2.5)
     logger.info(f"Rewriting complete: {len(results)}/{len(articles)} succeeded")
     return results
+'@
+Write-Host "Fixed: pipeline/rewrite.py"
+
+# ── .github/workflows/pipeline.yml ────────────────────────────────────────
+New-Item -ItemType Directory -Force -Path ".github\workflows" | Out-Null
+Set-Content -Path ".github\workflows\pipeline.yml" -Value @'
+name: Bangla News Pipeline
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: pipeline
+  cancel-in-progress: false
+
+jobs:
+  run-pipeline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Cache pip packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Check model files
+        run: |
+          if [ ! -d "models/all-MiniLM-L6-v2" ]; then
+            echo "ERROR: models/all-MiniLM-L6-v2/ not found in repo."
+            exit 1
+          fi
+          echo "Model found: $(du -sh models/all-MiniLM-L6-v2 | cut -f1)"
+
+      - name: Restore pipeline databases
+        uses: actions/cache@v4
+        with:
+          path: |
+            news_pipeline.sqlite
+            dedup_cache.sqlite
+          key: pipeline-db-${{ github.run_number }}
+          restore-keys: |
+            pipeline-db-
+
+      - name: Run pipeline
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          HF_API_TOKEN: ${{ secrets.HF_API_TOKEN }}
+          STORAGE_MODE: sqlite
+          IMPORTANCE_SCORE_THRESHOLD: "3.0"
+          DEDUP_SIMILARITY_THRESHOLD: "0.85"
+          LOG_LEVEL: INFO
+        run: python main.py
+
+      - name: Save pipeline databases
+        uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: |
+            news_pipeline.sqlite
+            dedup_cache.sqlite
+          key: pipeline-db-${{ github.run_number }}
+'@
+Write-Host "Fixed: .github/workflows/pipeline.yml"
+
+# ── .gitignore ────────────────────────────────────────────────────────────
+Set-Content -Path ".gitignore" -Value @'
+.env
+service_account.json
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+*.log
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+'@
+Write-Host "Fixed: .gitignore"
+
+Write-Host ""
+Write-Host "All files fixed! Now run:" -ForegroundColor Green
+Write-Host "  git add ." -ForegroundColor Yellow
+Write-Host "  git commit -m `"Fix all merge conflicts`"" -ForegroundColor Yellow
+Write-Host "  git push" -ForegroundColor Yellow

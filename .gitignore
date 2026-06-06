@@ -1,40 +1,12 @@
-# Environment & secrets — NEVER commit these
 .env
 service_account.json
-*.key
-*.pem
-
-# Python
 __pycache__/
 *.py[cod]
 .venv/
 venv/
 *.egg-info/
-dist/
-build/
-
-# Databases (large files — tracked via Actions cache, not git)
-<<<<<<< HEAD
-# EXCEPTION: if you want to commit the SQLite files, remove these lines
-news_pipeline.sqlite
-dedup_cache.sqlite
-
-=======
-news_pipeline.sqlite
-dedup_cache.sqlite
-
-# Model files ARE committed to git (needed for GitHub Actions offline use)
-# Do NOT add models/ here
-
->>>>>>> eb8ab960a4d2e032a6364395b31b39d8712a3e02
-# Logs
-pipeline.log
 *.log
-
-# OS
 .DS_Store
 Thumbs.db
-
-# IDE
 .vscode/
 .idea/
