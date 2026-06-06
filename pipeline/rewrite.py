@@ -67,9 +67,9 @@ def _call_groq(user_message: str) -> dict | None:
                     {"role": "system", "content": SYSTEM_PROMPT},
                     {"role": "user",   "content": user_message},
                 ],
-                max_tokens=600,
+                max_tokens=1024,
                 temperature=0.4,
-                response_format={"type": "json_object"},
+     
             )
             raw = response.choices[0].message.content.strip()
             result = json.loads(raw)
