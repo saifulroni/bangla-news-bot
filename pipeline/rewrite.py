@@ -14,7 +14,7 @@ from groq import Groq
 logger = logging.getLogger(__name__)
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
-GROQ_MODEL   = "llama3-70b-8192"
+GROQ_MODEL   = "llama-3.3-70b-versatile"
 MAX_RETRIES  = 3
 RETRY_DELAY  = 5
 
