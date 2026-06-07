@@ -7,3 +7,5 @@ gspread==6.1.2
 google-auth==2.29.0
 numpy==1.26.4
 python-dotenv==1.0.1
+newspaper4k==0.9.3.1
+lxml[html_clean]==5.2.2
